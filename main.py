@@ -13,6 +13,18 @@ r/sarcasm
 r/sarcasticcrazyideas
 r/sarcasticdiscussion
 
+most popular subreddits:
+r/asksubreddit
+r/funny
+r/todayilearned
+r/worldnews
+r/explainlikeimfive
+r/askscience
+r/books
+r/jokes
+r/nottheonion
+r/upliftingnews
+
 """
 
 client_id = "dj8omXNrlb5wbw"
@@ -35,7 +47,7 @@ def get_raw_data(subreddit_title, file="data.csv"):
     data = json.loads(text_data)
     data_all = data.values()[1]['children']
 
-    while (len(data_all) <= 20): #BUG: data length
+    while (len(data_all) <= 100): #BUG: data length
         time.sleep(2)  # Required by API
         last = data_all[-1]['data']['name']
         url = 'https://www.reddit.com/r/'+subreddit_title+'/top/.json?sort=top&t=all&limit=100&after=%s' % last
@@ -58,7 +70,8 @@ def get_raw_data(subreddit_title, file="data.csv"):
                         'Title': article_title,
                         'ID': article_id})
     rel_df = rel_df[['Date', 'Title', 'ID']]
-    rel_df.to_csv(path_or_buf=file, sep=",")
+    rel_df.to_csv(path_or_buf=file, sep=",", encoding='utf-8')
+
     return
 
 def get_comment_data(file_in, file_out, username, password):
@@ -84,10 +97,14 @@ def get_comment_data(file_in, file_out, username, password):
         submission = reddit.get_submission(submission_id=id[i])
         # submission.comments.replace_more(limit=None)
         for top_level_comment in submission.comments:
-            if is_ascii(s=top_level_comment.body):
-                print(top_level_comment.body)
-                comment_body.append(top_level_comment.body)
-                comment_title.append(title[i])
+            try:
+                if is_ascii(s=top_level_comment.body):
+                    print(top_level_comment.body)
+                    comment_body.append(top_level_comment.body)
+                    comment_title.append(title[i])
+            except AttributeError:
+                pass
+
 
     x = [('title', comment_title),
          ('comment', comment_body)]
@@ -95,17 +112,58 @@ def get_comment_data(file_in, file_out, username, password):
     comments.to_csv(path_or_buf=file_out, sep=",")
     return comments
 
+def getAPIdata(subreddit_title, username, password):
+    get_raw_data(subreddit_title=subreddit_title, file=subreddit_title+'.csv')
+    get_comment_data(file_in=subreddit_title+'.csv',
+                     file_out=subreddit_title+'-comments.csv',
+                     username=username, password=password)
+
+def getFileData(file, N, data):
+    with open(file) as myfile:
+        json_block = []
+        i = 0
+        for line in myfile:
+            j_content = json.loads(line)
+            # print j_content
+            json_block.append(j_content)
+            i = i + 1
+
+            if (i > N):
+                break
+    parseData(data_name=data, json_block=json_block)
+
+def parseData(data_name, json_block):
+    subreddit = []
+    subreddit_id = []
+    author = []
+    body = []
+
+    for j in json_block:
+        if is_ascii(s=j["body"]):
+            #for sarcastic data
+            #if ' /s ' in j["body"]:
+            body.append(str(j["body"]))
+            subreddit.append(str(j["subreddit"]))
+            subreddit_id.append(str(j["subreddit_id"]))
+            author.append(str(j["author"]))
+
+    data = DataFrame({'Subreddit': subreddit,
+                        'SubredditId': subreddit_id,
+                        'Author': author,
+                        'Body': body})
+    data = data[['Subreddit', 'SubredditId', 'Author', 'Body']]
+    data.to_csv(path_or_buf=data_name+'.csv', sep=",", encoding='utf-8')
+
 if __name__ == "__main__":
-    get_raw_data(subreddit_title='sarcasm', file='reddit-data-sarcasm.csv')
-    #get_raw_data(subreddit_title='sarcasticcrazyideas', file='reddit-data-sarcasticcrazyideas.csv')
-    #get_raw_data(subreddit_title='sarcasticdiscussion', file='reddit-data-sarcasticdiscussion.csv')
 
     #enter username and password
     username = ''
     password = ''
-    get_comment_data(file_in='reddit-data-sarcasm.csv',
-                     file_out='reddit-data-sarcasm-comments.csv',
-                     username=username, password=password)
-    get_comment_data(file_in='reddit-data-sarcasticcrazyideas.csv',
-                     file_out='reddit-data-sarcasticcrazyideas-comments.csv',
-                     username=username, password=password)
+    subreddit_title = ''
+
+    #uses PRAW Reddit API wrapper
+    getAPIdata(subreddit_title=subreddit_title, username=username, password=password)
+
+    #uses Reddit corpus 
+    getFileData(file="RC_2016-10", N=500, data='test')
+
