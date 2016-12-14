@@ -1,5 +1,6 @@
 import json
 
+
 def parseJSON(file):
     with open(file) as data_file:
         data = json.load(data_file)
