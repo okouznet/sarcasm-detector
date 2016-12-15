@@ -256,15 +256,14 @@ class Features:
         self.sentiment = self.get_sentiment_features()
         self.visual = self.get_visual_features()
         self.context = self.get_contextual_features()
-        features = np.column_stack((self.literal, self.sentiment, self.visual))
+        features = np.column_stack((self.literal, self.visual, self.sentiment, self.context))
         return features
 
 """
 SVM Classifier
 """
 def svm_classifier(X, y, XTest, ytest):
-    #clf = svm.SVC()
-    clf = svm.SVC(probability=True)
+    clf = svm.SVC()
     clf.fit(X, y)
     predicted = clf.predict(XTest)
 
@@ -316,6 +315,23 @@ def baseline(actual):
     return baseline
 
 
+"""
+Function to calculate precision (#correct sarcastic labels / total predicted sarcastic labels)
+"""
+def precision(predicted, actual):
+    numerator = 0
+    denominator = 0
+    for i in range(0, len(predicted)):
+        if predicted[i] == 1:
+            denominator += 1
+        if predicted[i] == 1 and actual[i] == 1:
+            numerator += 1
+    p = 0
+    if (denominator != 0):
+        p = (numerator / denominator)
+    print "Precision: " + str(p)
+    return p
+
 if __name__ == "__main__":
 
     #obtain training data
@@ -340,5 +356,13 @@ if __name__ == "__main__":
     #run Decision Tree Classifier
     predicted_tree = decision_tree_classifier(X=training_features, y=training_labels, XTest=test_features, ytest=test_labels)
 
+    #precision and recall for Decision Tree
     recall(predicted=predicted_tree, actual=test_labels)
+    precision(predicted=predicted_tree, actual=test_labels)
+
+    # precision and recall for SVM
+    recall(predicted=predicted_svm, actual=test_labels)
+    precision(predicted=predicted_svm, actual=test_labels)
+
+    #Baseline
     baseline(test_labels)
