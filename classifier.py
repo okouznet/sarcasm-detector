@@ -290,7 +290,7 @@ def decision_tree_classifier(X, y, XTest, ytest):
     return predicted
 
 """
-Function to calculate recall (#correct sarcastic labels / total sarcastic labels)
+Function to calculate recall (#correct sarcastic labels / total actual sarcastic labels)
 """
 def recall(predicted, actual):
     numerator = 0
@@ -301,6 +301,21 @@ def recall(predicted, actual):
         if predicted[i] == 1 and actual[i] == 1:
             numerator += 1
     print "Recall: " + str(numerator / denominator)
+    return (numerator / denominator)
+
+
+"""
+Function to calculate precision (#correct sarcastic labels / total predicted sarcastic labels)
+"""
+def precision(predicted, actual):
+    numerator = 0
+    denominator = 0
+    for i in range(0, len(predicted)):
+        if predicted[i] == 1:
+            denominator += 1
+        if predicted[i] == 1 and actual[i] == 1:
+            numerator += 1
+    print "Precision: " + str(numerator / denominator)
     return (numerator / denominator)
 
 """
